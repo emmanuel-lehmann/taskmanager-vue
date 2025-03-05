@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { ref, onMounted } from 'vue';
 import { fetchTasks, addTask, updateTask, deleteTask, assignTaskToUser } from '@/services/taskService';
 import { fetchUsers } from '@/services/userService';
@@ -14,6 +14,13 @@ const selectedUser = ref<User | null>(null);
 const isEditDialogOpen = ref(false);
 const isAssignDialogOpen = ref(false);
 const statusOptions = ['INCOMPLETE', 'COMPLETED'];
+
+const headers = [
+  { title: 'Task', key: 'title', sortable: true },
+  { title: 'Assign To', key: 'assignedTo', sortable: true },
+  { title: 'Status', key: 'status', sortable: false },
+  { title: 'Actions', key: 'actions', sortable: false }
+];
 
 const loadTasks = async () => {
   try {
@@ -107,34 +114,44 @@ onMounted(loadTasks);
 
 <template>
   <v-container>
-    <v-card class="pa-5" elevation="10">
-      <v-card-title class="text-h5">Task List</v-card-title>
+    <v-card class="pa-5 elevation-10">
+      <v-card-title class="text-h5 text-center">Task List</v-card-title>
+
       <v-card-text>
-        <v-data-table
-            :headers="[
-            { text: 'Title', key: 'title' },
-            { text: 'Assigned To', key: 'assignedTo', value: (item) => item.assignedTo?.username || 'Unassigned' },
-            { text: 'Status', key: 'status' },
-            { text: 'Actions', key: 'actions', sortable: false }
-          ]"
-            :items="tasks"
-        >
-          <template v-slot:item.actions="{ item }">
-            <v-btn color="green" @click="openAssignDialog(item)" size="small" variant="tonal">
-              Assign
-            </v-btn>
-            <v-btn color="blue" @click="openEditDialog(item)" size="small" variant="tonal">
-              Edit
-            </v-btn>
-            <v-btn color="red" @click="removeTask(item.id)" size="small" variant="tonal">
-              Delete
-            </v-btn>
+        <v-data-table :headers="headers" :items="tasks" class="elevation-2">
+
+          <template v-slot:[`column.title`]="{ column, toggleSort, isSorted, sortDesc }">
+            <span @click="toggleSort" style="cursor: pointer;">
+              {{ column.title }}
+              <v-icon v-if="isSorted" :icon="sortDesc ? 'mdi-arrow-down' : 'mdi-arrow-up'"></v-icon>
+              <v-icon v-else>mdi-arrow-up-down</v-icon>
+            </span>
+          </template>
+
+          <template v-slot:[`column.assignedTo`]="{ column, toggleSort, isSorted, sortDesc }">
+            <span @click="toggleSort" style="cursor: pointer;">
+              {{ column.title }}
+              <v-icon v-if="isSorted" :icon="sortDesc ? 'mdi-arrow-down' : 'mdi-arrow-up'"></v-icon>
+              <v-icon v-else>mdi-arrow-up-down</v-icon>
+            </span>
+          </template>
+
+          <template v-slot:[`item.assignedTo`]="{ item }">
+            {{ item.assignedTo?.username || 'Unassigned' }}
+          </template>
+
+          <template v-slot:[`item.actions`]="{ item }">
+            <div class="action-buttons">
+              <v-btn color="green" @click="openAssignDialog(item)" size="small" class="shadow-button">Assign</v-btn>
+              <v-btn color="blue" @click="openEditDialog(item)" size="small" class="shadow-button">Edit</v-btn>
+              <v-btn color="red" @click="removeTask(item.id)" size="small" class="shadow-button">Delete</v-btn>
+            </div>
           </template>
         </v-data-table>
       </v-card-text>
-      <v-card-actions>
+      <v-card-actions class="add-task-section">
         <v-text-field v-model="newTask" label="Task Title *" variant="outlined"></v-text-field>
-        <v-btn color="primary" @click="createTask">Add Task</v-btn>
+        <v-btn class="add-task-button" color="primary" @click="createTask">Add Task</v-btn>
       </v-card-actions>
     </v-card>
 
@@ -142,7 +159,7 @@ onMounted(loadTasks);
       <v-card v-if="editedTask">
         <v-card-title>Edit Task</v-card-title>
         <v-card-text>
-          <v-text-field v-model="editedTask.title" label="Task Title *" variant="outlined" required></v-text-field>
+          <v-text-field v-model="editedTask.title" label="Task Title *" required variant="outlined"></v-text-field>
           <v-select v-model="editedTask.status" :items="statusOptions" label="Status" variant="outlined"></v-select>
         </v-card-text>
         <v-card-actions>
@@ -162,8 +179,8 @@ onMounted(loadTasks);
               item-title="username"
               item-value="id"
               label="Select User"
-              variant="outlined"
               return-object
+              variant="outlined"
           ></v-autocomplete>
         </v-card-text>
         <v-card-actions>
@@ -174,3 +191,42 @@ onMounted(loadTasks);
     </v-dialog>
   </v-container>
 </template>
+
+<style scoped>
+:deep(.v-data-table thead th) {
+  font-weight: bold;
+  font-size: 1.1rem;
+  padding: 10px;
+  background-color: #f5f5f5;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.shadow-button {
+  background-color: white;
+  color: black;
+  font-weight: bold;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.shadow-button:hover {
+  filter: brightness(90%);
+}
+
+.add-task-section {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+
+.add-task-button {
+  background-color: #f0f0f0;
+  color: #000000;
+  font-weight: bold;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+}
+</style>

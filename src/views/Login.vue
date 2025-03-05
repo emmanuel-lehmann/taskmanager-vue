@@ -33,9 +33,6 @@ const handleLogin = async () => {
     loading.value = false;
   }
 };
-
-
-
 </script>
 
 <template>
